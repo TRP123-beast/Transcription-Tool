@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:3000
+
+### Health check
+GET {{baseUrl}}/api/health
+
+###
+
+### ─────────────────────────────────────────
+### URL — receive JSON with link, download + transcribe (no DB needed)
+### ─────────────────────────────────────────
+
+### Transcribe from URL (sent by n8n or another service)
+POST {{baseUrl}}/api/transcribe/url
+Content-Type: application/json
+
+{
+  "type": "audio",
+  "link": "https://n8n.dsliked.work.gd/api/recordings/file?path=2026%2F04-April%2Faudio%2FRoom_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
+  "fileName": "Room_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
+  "relativePath": "2026/04-April/audio/Room_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
+  "roomName": "Room 2",
+  "botName": null,
+  "participants": ["Chris","Clive", "Elion", "Brian P"],
+  "durationSeconds": 1097.377,
+  "sizeBytes": 35116032,
+  "meetingId": "5096021684",
+  "completedAt": "2026-04-23T08:56:26.473Z"
+}
+
+###
+
+### ─────────────────────────────────────────
+### SYNC — upload file directly, no DB needed
+### ─────────────────────────────────────────
+
+### Upload .wav file (sync — returns transcript immediately)
+POST {{baseUrl}}/api/transcribe/sync
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="audio.wav"
+Content-Type: audio/wav
+
+< ./audio.wav
+--boundary--
+
+###
+
+### ─────────────────────────────────────────
+### ASYNC — queue + Supabase job tracking
+### ─────────────────────────────────────────
+
+### Upload .wav file (async — returns jobId, poll for result)
+POST {{baseUrl}}/api/transcribe
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="audio.wav"
+Content-Type: audio/wav
+
+< ./audio.wav
+--boundary--
+
+###
+
+### Set jobId from async response then use below
+@jobId = JOB_ID
+
+### Check job status
+GET {{baseUrl}}/api/jobs/{{jobId}}
+
+###
+
+### Get transcript result
+GET {{baseUrl}}/api/jobs/{{jobId}}/result
+
+###
+
+### List all jobs
+GET {{baseUrl}}/api/jobs

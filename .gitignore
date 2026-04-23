@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Whisper model cache (large files, downloaded on first run)
+models/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temp upload files
+tmp/
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# VS Code — keep settings.json (REST client timeout), ignore personal files
+.vscode/*
+!.vscode/settings.json
