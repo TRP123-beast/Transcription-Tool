@@ -39,8 +39,9 @@ async function getTranscriber() {
       })
       console.log(`[whisper] GPU ready.`)
     } catch (err) {
-      console.warn(`[whisper] GPU unavailable (${(err as Error).message.split('\n')[0]}), falling back to CPU...`)
+      console.warn(`[whisper] GPU unavailable, falling back to CPU...`)
       _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
+        device: 'cpu' as any,
         dtype: 'q8' as any,
       })
       console.log(`[whisper] CPU ready (fallback).`)
@@ -48,6 +49,7 @@ async function getTranscriber() {
   } else {
     console.log(`[whisper] Loading model: ${config.whisper.model} | device: cpu | dtype: q8`)
     _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
+      device: 'cpu' as any,
       dtype: 'q8' as any,
     })
     console.log(`[whisper] CPU ready.`)
