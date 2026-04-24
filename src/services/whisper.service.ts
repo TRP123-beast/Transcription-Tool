@@ -17,6 +17,10 @@ const EFFECTIVE_STEP_S = WHISPER_CHUNK_S - WHISPER_STRIDE_S // 25s per internal 
 
 let _pipeline: any = null
 
+export async function warmupWhisper() {
+  await getTranscriber()
+}
+
 async function getTranscriber() {
   if (_pipeline) return _pipeline
 

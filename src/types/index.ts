@@ -11,4 +11,6 @@ export interface TranscribeUrlPayload {
   meetingId?: string
   completedAt?: string
   headers?: Record<string, string>
+  // If provided: return 202 immediately and POST result to this URL when done
+  callbackUrl?: string
 }

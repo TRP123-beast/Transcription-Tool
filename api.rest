@@ -1,15 +1,14 @@
 @baseUrl = http://localhost:3000
+@prodUrl = https://transcription-tool-4i87.onrender.com
 
-### Health check
+### ─── LOCAL ──────────────────────────────────
+
+### Health check (local)
 GET {{baseUrl}}/api/health
 
 ###
 
-### ─────────────────────────────────────────
-### URL — receive JSON with link, download + transcribe
-### ─────────────────────────────────────────
-
-### Transcribe from URL (main endpoint — used by n8n)
+### Transcribe from URL (local)
 POST {{baseUrl}}/api/transcribe/url
 Content-Type: application/json
 
@@ -29,12 +28,50 @@ Content-Type: application/json
 
 ###
 
-### ─────────────────────────────────────────
-### SYNC — upload file directly
-### ─────────────────────────────────────────
-
-### Upload .wav file (returns transcript immediately)
+### Upload file directly (local)
 POST {{baseUrl}}/api/transcribe/sync
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="audio.wav"
+Content-Type: audio/wav
+
+< ./audio.wav
+--boundary--
+
+###
+
+### ─── PRODUCTION ──────────────────────────────
+
+### Health check (prod)
+GET {{prodUrl}}/api/health
+
+###
+
+### Transcribe from URL — webhook mode (prod, returns 202 immediately)
+### n8n should set callbackUrl to a webhook trigger node URL
+POST {{prodUrl}}/api/transcribe/url
+Content-Type: application/json
+
+{
+  "type": "audio",
+  "link": "https://n8n.dsliked.work.gd/api/recordings/file?path=2026%2F04-April%2Faudio%2FRoom_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
+  "fileName": "Room_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
+  "relativePath": "2026/04-April/audio/Room_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
+  "roomName": "Room 2",
+  "botName": null,
+  "participants": ["Chris", "Brian P"],
+  "durationSeconds": 1097.377,
+  "sizeBytes": 35116032,
+  "meetingId": "5096021684",
+  "completedAt": "2026-04-23T08:56:26.473Z",
+  "callbackUrl": "https://n8n.dsliked.work.gd/webhook/transcription-result"
+}
+
+###
+
+### Upload file directly (prod)
+POST {{prodUrl}}/api/transcribe/sync
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary

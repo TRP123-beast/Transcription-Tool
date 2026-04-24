@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import multipart from '@fastify/multipart'
 import { config } from './config'
 import { transcriptionRoutes } from './routes/transcription'
+import { warmupWhisper } from './services/whisper.service'
 
 const fastify = Fastify({
   logger: {
@@ -20,11 +21,12 @@ const start = async () => {
     await fastify.listen({ port: config.port, host: config.host })
     console.log(`Transcription API running on http://localhost:${config.port}`)
     console.log('Endpoints:')
-    console.log('  POST /api/transcribe        — upload audio/video file')
-    console.log('  GET  /api/jobs              — list all jobs')
-    console.log('  GET  /api/jobs/:id          — job status')
-    console.log('  GET  /api/jobs/:id/result   — get transcript')
-    console.log('  GET  /api/health            — health check')
+    console.log('  POST /api/transcribe/url  — transcribe from URL (webhook mode supported)')
+    console.log('  POST /api/transcribe/sync — upload file directly')
+    console.log('  GET  /api/health          — health check')
+
+    // Load model in background after server is up so health checks pass
+    warmupWhisper().catch((err) => console.error('[whisper] Warmup failed:', err))
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)

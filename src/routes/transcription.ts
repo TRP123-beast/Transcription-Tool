@@ -34,6 +34,55 @@ export async function transcriptionRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Missing required fields: link, fileName' })
     }
 
+    const result = () => ({
+      meetingId: body.meetingId ?? null,
+      fileName: body.fileName,
+      roomName: body.roomName ?? null,
+      participants: body.participants ?? [],
+      durationSeconds: body.durationSeconds ?? null,
+      completedAt: body.completedAt ?? null,
+    })
+
+    // Webhook mode — return 202 immediately, POST result to callbackUrl when done
+    if (body.callbackUrl) {
+      reply.status(202).send({ message: 'Transcription started', fileName: body.fileName })
+
+      // Process in background (don't await)
+      ;(async () => {
+        let tempPath: string | null = null
+        try {
+          tempPath = await downloadToTemp(body.link, body.fileName, body.headers)
+          const transcript = await transcribeFile(tempPath, body.fileName)
+
+          console.log('\n─────────────────────────────────────────')
+          console.log(`[transcript] ${body.fileName}`)
+          console.log('─────────────────────────────────────────')
+          console.log(transcript)
+          console.log('─────────────────────────────────────────\n')
+
+          await fetch(body.callbackUrl!, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...result(), transcript }),
+          })
+          console.log(`[webhook] Result sent to ${body.callbackUrl}`)
+        } catch (err) {
+          const error = err instanceof Error ? err.message : String(err)
+          console.error(`[webhook] Failed: ${error}`)
+          await fetch(body.callbackUrl!, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...result(), error }),
+          }).catch(() => {})
+        } finally {
+          if (tempPath) await rm(tempPath, { force: true })
+        }
+      })()
+
+      return
+    }
+
+    // Sync mode — wait and return transcript directly
     let tempPath: string | null = null
     try {
       tempPath = await downloadToTemp(body.link, body.fileName, body.headers)
@@ -45,15 +94,7 @@ export async function transcriptionRoutes(fastify: FastifyInstance) {
       console.log(transcript)
       console.log('─────────────────────────────────────────\n')
 
-      return {
-        meetingId: body.meetingId ?? null,
-        fileName: body.fileName,
-        roomName: body.roomName ?? null,
-        participants: body.participants ?? [],
-        durationSeconds: body.durationSeconds ?? null,
-        completedAt: body.completedAt ?? null,
-        transcript,
-      }
+      return { ...result(), transcript }
     } finally {
       if (tempPath) await rm(tempPath, { force: true })
     }
@@ -88,6 +129,10 @@ export async function transcriptionRoutes(fastify: FastifyInstance) {
       await rm(tempPath, { force: true })
     }
   })
+
+  // Root route — required for Render health checks (HEAD /)
+  fastify.get('/', async () => ({ status: 'ok' }))
+  fastify.head('/', async () => {})
 
   // GET /api/health
   fastify.get('/api/health', async () => {
