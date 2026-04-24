@@ -29,11 +29,29 @@ async function getTranscriber() {
   env.allowLocalModels = true
 
   const isGpu = config.whisper.device !== 'auto'
-  console.log(`[whisper] Loading model: ${config.whisper.model} | device: ${isGpu ? config.whisper.device : 'cpu'} | dtype: ${config.whisper.dtype}`)
-  _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
-    ...(isGpu && { device: config.whisper.device as any }),
-    dtype: config.whisper.dtype as any,
-  })
+
+  if (isGpu) {
+    console.log(`[whisper] Loading model: ${config.whisper.model} | device: ${config.whisper.device} | dtype: ${config.whisper.dtype}`)
+    try {
+      _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
+        device: config.whisper.device as any,
+        dtype: config.whisper.dtype as any,
+      })
+      console.log(`[whisper] GPU ready.`)
+    } catch (err) {
+      console.warn(`[whisper] GPU unavailable (${(err as Error).message.split('\n')[0]}), falling back to CPU...`)
+      _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
+        dtype: 'q8' as any,
+      })
+      console.log(`[whisper] CPU ready (fallback).`)
+    }
+  } else {
+    console.log(`[whisper] Loading model: ${config.whisper.model} | device: cpu | dtype: q8`)
+    _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
+      dtype: 'q8' as any,
+    })
+    console.log(`[whisper] CPU ready.`)
+  }
   console.log('[whisper] Model ready.')
 
   return _pipeline
