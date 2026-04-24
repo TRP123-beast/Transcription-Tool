@@ -132,7 +132,6 @@ export async function transcriptionRoutes(fastify: FastifyInstance) {
 
   // Root route — required for Render health checks (HEAD /)
   fastify.get('/', async () => ({ status: 'ok' }))
-  fastify.head('/', async () => {})
 
   // GET /api/health
   fastify.get('/api/health', async () => {
