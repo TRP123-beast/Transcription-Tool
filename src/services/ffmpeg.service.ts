@@ -2,7 +2,6 @@ import { spawn } from 'child_process'
 import { stat } from 'fs/promises'
 import { join } from 'path'
 import ffmpegPath from 'ffmpeg-static'
-import { config } from '../config'
 
 const FFMPEG = ffmpegPath as string
 
@@ -52,8 +51,8 @@ export async function extractAudioToWav(inputPath: string, outputDir: string): P
 
 export async function chunkAudio(audioPath: string, outputDir: string): Promise<AudioChunk[]> {
   const duration = await probe(audioPath)
-  const chunkDuration = config.ffmpeg.chunkDurationSeconds
-  const overlap = config.ffmpeg.overlapSeconds
+  const chunkDuration = 600  // 10 min chunks
+  const overlap = 10
   const chunks: AudioChunk[] = []
 
   let start = 0

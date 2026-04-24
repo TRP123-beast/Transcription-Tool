@@ -1,7 +1,7 @@
 import { readFile, mkdir, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 import { config } from '../config'
 import {
   extractAudioToWav,
@@ -24,9 +24,11 @@ async function getTranscriber() {
   env.cacheDir = config.whisper.cacheDir
   env.allowLocalModels = true
 
-  console.log(`[whisper] Loading model: ${config.whisper.model} (downloads on first run)...`)
+  const isGpu = config.whisper.device !== 'auto'
+  console.log(`[whisper] Loading model: ${config.whisper.model} | device: ${isGpu ? config.whisper.device : 'cpu'} | dtype: ${config.whisper.dtype}`)
   _pipeline = await pipeline('automatic-speech-recognition', config.whisper.model, {
-    dtype: 'q8',
+    ...(isGpu && { device: config.whisper.device as any }),
+    dtype: config.whisper.dtype as any,
   })
   console.log('[whisper] Model ready.')
 
@@ -54,7 +56,7 @@ async function readPcmWav(filePath: string): Promise<Float32Array> {
 
 export async function transcribeFile(filePath: string, label?: string): Promise<string> {
   const tag = label ?? filePath.split(/[\\/]/).pop()
-  const workDir = join(tmpdir(), `transcription-${uuidv4()}`)
+  const workDir = join(tmpdir(), `transcription-${randomUUID()}`)
   await mkdir(workDir, { recursive: true })
 
   const start = Date.now()

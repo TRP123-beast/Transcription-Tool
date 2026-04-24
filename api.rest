@@ -6,10 +6,10 @@ GET {{baseUrl}}/api/health
 ###
 
 ### ─────────────────────────────────────────
-### URL — receive JSON with link, download + transcribe (no DB needed)
+### URL — receive JSON with link, download + transcribe
 ### ─────────────────────────────────────────
 
-### Transcribe from URL (sent by n8n or another service)
+### Transcribe from URL (main endpoint — used by n8n)
 POST {{baseUrl}}/api/transcribe/url
 Content-Type: application/json
 
@@ -20,7 +20,7 @@ Content-Type: application/json
   "relativePath": "2026/04-April/audio/Room_2_Chris_Brian_P_2026-04-22_15-08-56.wav",
   "roomName": "Room 2",
   "botName": null,
-  "participants": ["Chris","Clive", "Elion", "Brian P"],
+  "participants": ["Chris", "Brian P"],
   "durationSeconds": 1097.377,
   "sizeBytes": 35116032,
   "meetingId": "5096021684",
@@ -30,10 +30,10 @@ Content-Type: application/json
 ###
 
 ### ─────────────────────────────────────────
-### SYNC — upload file directly, no DB needed
+### SYNC — upload file directly
 ### ─────────────────────────────────────────
 
-### Upload .wav file (sync — returns transcript immediately)
+### Upload .wav file (returns transcript immediately)
 POST {{baseUrl}}/api/transcribe/sync
 Content-Type: multipart/form-data; boundary=boundary
 
@@ -43,38 +43,3 @@ Content-Type: audio/wav
 
 < ./audio.wav
 --boundary--
-
-###
-
-### ─────────────────────────────────────────
-### ASYNC — queue + Supabase job tracking
-### ─────────────────────────────────────────
-
-### Upload .wav file (async — returns jobId, poll for result)
-POST {{baseUrl}}/api/transcribe
-Content-Type: multipart/form-data; boundary=boundary
-
---boundary
-Content-Disposition: form-data; name="file"; filename="audio.wav"
-Content-Type: audio/wav
-
-< ./audio.wav
---boundary--
-
-###
-
-### Set jobId from async response then use below
-@jobId = JOB_ID
-
-### Check job status
-GET {{baseUrl}}/api/jobs/{{jobId}}
-
-###
-
-### Get transcript result
-GET {{baseUrl}}/api/jobs/{{jobId}}/result
-
-###
-
-### List all jobs
-GET {{baseUrl}}/api/jobs
